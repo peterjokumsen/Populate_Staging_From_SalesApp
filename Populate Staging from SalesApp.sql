@@ -12,35 +12,35 @@ BEGIN
 --======================================================================================================================
 --               ***********                   BEGIN RISK ITERATOR                      ************
 --======================================================================================================================
- 
+
 --Base Premium (used for checks and balances)
-DECLARE @PremLev4 [FLOAT]                      = 6.7
-DECLARE @PremLev3 [FLOAT]                      = 15.85
-DECLARE @PremLev2 [FLOAT]                      = 26.85
-DECLARE @PremLev1 [FLOAT]                      = 32.85
+DECLARE @PremLev4 [FLOAT]                      = 3.406376--6.7
+DECLARE @PremLev3 [FLOAT]                      = 7.562382--15.85
+DECLARE @PremLev2 [FLOAT]                      = 16.315926--26.85
+DECLARE @PremLev1 [FLOAT]                      = 18.542471--32.85
 --Premium Splits
 DECLARE @Equipsme_Margin_4 [FLOAT]            = 2.45924716
 DECLARE @AXA_Margin_4 [FLOAT]                 = 2.89542
-DECLARE @Equipsme_Comm_4 [FLOAT]              = 0.997882440000001
+DECLARE @Equipsme_Comm_4 [FLOAT]              = 0.43398479--0.997882440000001
 DECLARE @AXA_Margin_IPT_4 [FLOAT]             = 0.3474504
 
 DECLARE @Equipsme_Margin_3 [FLOAT]            = 6.21631645
 DECLARE @AXA_Margin_3 [FLOAT]                 = 6.428025
-DECLARE @Equipsme_Comm_3 [FLOAT]              = 2.43429555
+DECLARE @Equipsme_Comm_3 [FLOAT]              = 1.09699702--2.43429555
 DECLARE @AXA_Margin_IPT_3 [FLOAT]             = 0.771363
 
 DECLARE @Equipsme_Margin_2 [FLOAT]            = 7.21687167499998
 DECLARE @AXA_Margin_2 [FLOAT]                 = 13.8685375
-DECLARE @Equipsme_Comm_2 [FLOAT]              = 4.100366325
+DECLARE @Equipsme_Comm_2 [FLOAT]              = 1.27356559--4.100366325
 DECLARE @AXA_Margin_IPT_2 [FLOAT]             = 1.6642245
 
 DECLARE @Equipsme_Margin_1 [FLOAT]            = 9.9312678
 DECLARE @AXA_Margin_1 [FLOAT]                 = 15.7611
-DECLARE @Equipsme_Comm_1 [FLOAT]              = 5.2663002
-DECLARE @AXA_Margin_IPT_1 [FLOAT]             = 1.891332
+DECLARE @Equipsme_Comm_1 [FLOAT]              = 1.75257667--5.2663002
+DECLARE @AXA_Margin_IPT_1 [FLOAT]             = 1.891332 
 
-DECLARE @Dental_Equipsme_Margin [FLOAT]       = 2.12186773333334
-DECLARE @Dental_AXA_Margin [FLOAT]            = 3.85946666666667
+DECLARE @Dental_Equipsme_Margin [FLOAT]       = 2.49631--2.12186773333334
+DECLARE @Dental_AXA_Margin [FLOAT]            = 4.540549--3.85946666666667
 DECLARE @Dental_Equipsme_Comm [FLOAT]         = 1.0555296
 DECLARE @Dental_AXA_MARGIN_IPT [FLOAT]        = 0.463136
 
@@ -48,6 +48,7 @@ DECLARE @Support_Equipsme_Margin [FLOAT]      = 0.530576923
 DECLARE @Support_Health_Assured [FLOAT]       = 0.559166667
 DECLARE @Support_VAT [FLOAT]                  = 0.217948718
 DECLARE @Support_Equipsme_Comm [FLOAT]        = 0.192307692
+
 DECLARE @Thriva_4 [FLOAT]                     = 0.15
 DECLARE @Thriva_3 [FLOAT]                     = 1
 DECLARE @Thriva_2 [FLOAT]                     = 2
@@ -509,7 +510,7 @@ SELECT
     mc.EmployeeCount                                                           [Support_Number_of_Employees],
     CASE mc.SupportOption
         WHEN 0 THEN 0
-        WHEN 1 THEN mc.EmployeeCount * 1.5
+       WHEN 1 THEN mc.EmployeeCount * 1.5
     END                                                                        [Support_Pack],
     CASE mc.SupportOption
         WHEN 0 THEN 0
@@ -540,10 +541,11 @@ SELECT
     (mc.EmployeeCount * @Medical_Solutions)                                    [Medical_Solutions_Premium],
     --==================================================
     --RISK SME EMPLOYEE PACKAGE 1001
-    --==================================================
+   --==================================================
     ep.CoverStart                                                              [SME_EmpPack_EffectiveDate],
     ep.QuoteId                                                                 [SME_EmpPack_Employee_Ref_Number],
-    ep.Reference                                                               [SME_EmpPack_Employee_Policy_Number],
+    --ep.Reference                                                             [SME_EmpPack_Employee_Policy_Number],
+       STUFF(RTRIM(ep.Reference),LEN(RTRIM(ep.Reference))-2,0,'-')             [SME_EmpPack_Employee_Policy_Number],
     ''                                                                         [SME_EmpPack_AXA_PPP_Policy_No],
     ep.Title                                                                   [SME_EmpPack_Title],
     ep.FirstName                                                               [SME_EmpPack_First_Name],
@@ -635,7 +637,7 @@ SELECT
     GETDATE()                                                                  [dtProcessDate]
 FROM MainCover mc
     JOIN EmployeePackage ep ON mc.iD = ep.ParentQuoteId
- 
+
 --======================================================================================================================
 --               ***********                   BEGIN Customer Policy                      ************
 --======================================================================================================================
@@ -731,7 +733,7 @@ AS (
     SELECT 
         SME_EmpPack_Employee_Policy_Number,
         CAST(BP_EmpPack_Employee_AXA_Margin_IPT AS FLOAT)                      [IPT], 
-       0                                                                       [VAT],
+        0                                                                      [VAT],
         CAST(BP_EmpPack_Employee_Equipsme_Margin AS FLOAT) +
         CAST(BP_EmpPack_Employee_AXA_Margin AS FLOAT) +
         CAST(BP_EmpPack_Employee_Equipsme_Comm AS FLOAT) + 
@@ -822,18 +824,18 @@ SELECT
     DAY(qd.CoverStart)                                                         [PH_CollectionDay],
     CASE ISNULL(q.ParentQuoteID,0)
         WHEN 0 THEN PHCalcTotal.VAT 
-        ELSE BuyUp.VAT
+        ELSE ISNULL(BuyUp.VAT,0)
     END                                                                        [PH_VAT],
     1                                                                          [PH_TAXPerc],
     0                                                                          [PH_PolicyFee],
     0                                                                          [PH_BrokerFee],
     CASE ISNULL(q.ParentQuoteID,0)
         WHEN 0 THEN PHCalcTotal.IPT 
-        ELSE BuyUp.IPT        
+        ELSE ISNULL(BuyUp.IPT,0)        
     END                                                                        [PH_AdminFee],
     CASE ISNULL(q.ParentQuoteID,0)
         WHEN 0 THEN PHCalcTotal.IPT 
-        ELSE BuyUp.IPT
+        ELSE ISNULL(BuyUp.IPT,0)
     END                                                                        [PH_IPTFee], --IPT is stored in the AdminFee column
     --==================================================
     --POLICY DETAILS
@@ -873,7 +875,7 @@ FROM
 WHERE
     qsh.[Status] = 3
     AND q.ETLStatus = 0
- 
+
 --======================================================================================================================
 --               ***********                   BEGIN Members                      ************
 --======================================================================================================================
@@ -934,7 +936,253 @@ FROM
         ) qshl ON qsh.QuoteId = qshl.QuoteId AND qsh.Id = qshl.Id
     WHERE
         (q.ParentQuoteId IS NOT NULL)
-        AND q.ETLStatus = 0
+        AND q.ETLStatus = 0;
+
+
+
+INSERT INTO 
+       [SKi_Equipsme_UAT].[ski_int].[ESME_Staging_BuyUp_Risk]
+       (
+              RH_ExternalReference
+              ,CH_RegistrationNumber
+              ,PH_PolicyNumber
+              ,RH_ParentQuoteID
+              ,RH_QuoteID
+              ,MC_1_Number_of_Employees
+              ,MC_1_Premium
+              ,MC_2_Number_of_Employees
+              ,MC_2_Premium
+              ,MC_3_Number_of_Employees
+              ,MC_3_Premium
+              ,MC_4_Number_of_Employees
+              ,MC_4_Premium
+              ,MC_1_Single_Cover
+              ,MC_1_Single_Cover_Premium
+              ,MC_1_Couple_Cover
+              ,MC_1_Couple_Cover_Premium
+              ,MC_1_Single_Family_Cover
+              ,MC_1_Single_Family_Cover_Premium
+              ,MC_1_Couple_Family_Cover
+              ,MC_1_Couple_Family_Cover_Premium
+              ,MC_2_Single_Cover
+              ,MC_2_Single_Cover_Premium
+              ,MC_2_Couple_Cover
+              ,MC_2_Couple_Cover_Premium
+              ,MC_2_Single_Family_Cover
+              ,MC_2_Single_Family_Cover_Premium
+              ,MC_2_Couple_Family_Cover
+              ,MC_2_Couple_Family_Cover_Premium
+              ,MC_3_Single_Cover
+              ,MC_3_Single_Cover_Premium
+              ,MC_3_Couple_Cover
+              ,MC_3_Couple_Cover_Premium
+              ,MC_3_Single_Family_Cover
+              ,MC_3_Single_Family_Cover_Premium
+              ,MC_3_Couple_Family_Cover
+              ,MC_3_Couple_Family_Cover_Premium
+              ,MC_4_Single_Cover
+              ,MC_4_Single_Cover_Premium
+              ,MC_4_Couple_Cover
+              ,MC_4_Couple_Cover_Premium
+              ,MC_4_Single_Family_Cover
+              ,MC_4_Single_Family_Cover_Premium
+              ,MC_4_Couple_Family_Cover
+              ,MC_4_Couple_Family_Cover_Premium
+              ,Dental_EffectiveDate
+              ,Dental_Number_of_Employees
+              ,Dental_Dental_And_Optical_Pack
+              ,Dental_Equipsme_Margin
+              ,Dental_AXA_Margin
+              ,Dental_Equipsme_Comm
+              ,Dental_AXA_Margin_IPT
+              ,Support_EffectiveDate
+              ,Support_Number_of_Employees
+              ,Support_Dental_And_Optical_Pack
+              ,Support_Equipsme_Margin
+              ,Support_Health_Assured
+              ,Support_VAT
+              ,Support_Equipsme_Comm
+              ,Thriva_Premium
+              ,Medical_Solutions_Premium
+              ,SME_EmpPack_EffectiveDate
+              ,SME_EmpPack_Employee_Ref_Number
+              ,SME_EmpPack_Employee_Policy_Number
+              ,SME_EmpPack_AXA_PPP_Policy_No
+              ,SME_EmpPack_Title
+              ,SME_EmpPack_First_Name
+              ,SME_EmpPack_Last_Name
+              ,SME_EmpPack_Position
+              ,SME_EmpPack_Position_Other
+              ,SME_EmpPack_Sex
+              ,SME_EmpPack_Date_Of_Birth
+              ,SME_EmpPack_Email_Address
+              ,SME_EmpPack_Premises
+              ,SME_EmpPack_Home_Address_Line_1
+              ,SME_EmpPack_Home_Address_Line_2
+              ,SME_EmpPack_Home_Address_Line_3
+              ,SME_EmpPack_Province
+              ,SME_EmpPack_Area_Code
+              ,SME_EmpPack_SME_Level
+              ,SME_EmpPack_SME_Level_Premium
+              ,SME_EmpPack_Equipsme_Margin
+              ,SME_EmpPack_AXA_Margin
+              ,SME_EmpPack_Equipsme_Comm
+              ,SME_EmpPack_AXA_Margin_IPT
+              ,SME_EmpPack_SME_Cover_Status
+              ,SME_EmpPack_Beneficiaries
+              ,BP_EmpPack_EffectiveDate
+              ,BP_EmpPack_Title
+              ,BP_EmpPack_First_Name
+              ,BP_EmpPack_Last_Name
+              ,BP_EmpPack_Position
+              ,BP_EmpPack_Position_Other
+              ,BP_EmpPack_Sex
+              ,BP_EmpPack_Date_Of_Birth
+              ,BP_EmpPack_Email_Address
+              ,BP_EmpPack_Premises
+              ,BP_EmpPack_Home_Address_Line_1
+              ,BP_EmpPack_Home_Address_Line_2
+              ,BP_EmpPack_Home_Address_Line_3
+              ,BP_EmpPack_Province
+              ,BP_EmpPack_Area_Code
+              ,BP_EmpPack_SME_Level
+              ,BP_EmpPack_Optional_Level_Buy_Up
+              ,BP_EmpPack_SME_Cover_Status
+              ,BP_EmpPack_Optional_Cover_Status_Buy_Up
+              ,BP_EmpPack_Beneficiaries
+              ,BP_EmpPack_Employee_Total_Premium
+              ,BP_EmpPack_Employee_Equipsme_Margin
+              ,BP_EmpPack_Employee_AXA_Margin
+              ,BP_EmpPack_Employee_Equipsme_Comm
+              ,BP_EmpPack_Employee_AXA_Margin_IPT
+              ,BP_EmpPack_Employee_Thriva
+              ,BP_Emppack_Employee_Medical_Solutions
+              ,iImportRecNo
+              ,dtProcessDate
+       )
+SELECT
+       RH_ExternalReference
+       ,CH_RegistrationNumber
+       ,PH_PolicyNumber
+       ,RH_ParentQuoteID
+       ,RH_QuoteID
+       ,MC_1_Number_of_Employees
+       ,MC_1_Premium
+       ,MC_2_Number_of_Employees
+       ,MC_2_Premium
+       ,MC_3_Number_of_Employees
+       ,MC_3_Premium
+       ,MC_4_Number_of_Employees
+       ,MC_4_Premium
+       ,MC_1_Single_Cover
+       ,MC_1_Single_Cover_Premium
+       ,MC_1_Couple_Cover
+       ,MC_1_Couple_Cover_Premium
+       ,MC_1_Single_Family_Cover
+       ,MC_1_Single_Family_Cover_Premium
+       ,MC_1_Couple_Family_Cover
+       ,MC_1_Couple_Family_Cover_Premium
+       ,MC_2_Single_Cover
+       ,MC_2_Single_Cover_Premium
+       ,MC_2_Couple_Cover
+       ,MC_2_Couple_Cover_Premium
+       ,MC_2_Single_Family_Cover
+       ,MC_2_Single_Family_Cover_Premium
+       ,MC_2_Couple_Family_Cover
+       ,MC_2_Couple_Family_Cover_Premium
+       ,MC_3_Single_Cover
+       ,MC_3_Single_Cover_Premium
+       ,MC_3_Couple_Cover
+       ,MC_3_Couple_Cover_Premium
+       ,MC_3_Single_Family_Cover
+       ,MC_3_Single_Family_Cover_Premium
+       ,MC_3_Couple_Family_Cover
+       ,MC_3_Couple_Family_Cover_Premium
+       ,MC_4_Single_Cover
+       ,MC_4_Single_Cover_Premium
+       ,MC_4_Couple_Cover
+       ,MC_4_Couple_Cover_Premium
+       ,MC_4_Single_Family_Cover
+       ,MC_4_Single_Family_Cover_Premium
+       ,MC_4_Couple_Family_Cover
+       ,MC_4_Couple_Family_Cover_Premium
+       ,Dental_EffectiveDate
+       ,Dental_Number_of_Employees
+       ,Dental_Dental_And_Optical_Pack
+       ,Dental_Equipsme_Margin
+       ,Dental_AXA_Margin
+       ,Dental_Equipsme_Comm
+       ,Dental_AXA_Margin_IPT
+       ,Support_EffectiveDate
+       ,Support_Number_of_Employees
+       ,Support_Dental_And_Optical_Pack
+       ,Support_Equipsme_Margin
+       ,Support_Health_Assured
+       ,Support_VAT
+       ,Support_Equipsme_Comm
+       ,Thriva_Premium
+       ,Medical_Solutions_Premium
+       ,SME_EmpPack_EffectiveDate
+       ,SME_EmpPack_Employee_Ref_Number
+       ,SME_EmpPack_Employee_Policy_Number
+       ,SME_EmpPack_AXA_PPP_Policy_No
+       ,SME_EmpPack_Title
+       ,SME_EmpPack_First_Name
+       ,SME_EmpPack_Last_Name
+       ,SME_EmpPack_Position
+       ,SME_EmpPack_Position_Other
+       ,SME_EmpPack_Sex
+       ,SME_EmpPack_Date_Of_Birth
+       ,SME_EmpPack_Email_Address
+       ,SME_EmpPack_Premises
+       ,SME_EmpPack_Home_Address_Line_1
+       ,SME_EmpPack_Home_Address_Line_2
+       ,SME_EmpPack_Home_Address_Line_3
+       ,SME_EmpPack_Province
+       ,SME_EmpPack_Area_Code
+       ,SME_EmpPack_SME_Level
+       ,SME_EmpPack_SME_Level_Premium
+       ,SME_EmpPack_Equipsme_Margin
+       ,SME_EmpPack_AXA_Margin
+       ,SME_EmpPack_Equipsme_Comm
+       ,SME_EmpPack_AXA_Margin_IPT
+       ,SME_EmpPack_SME_Cover_Status
+       ,SME_EmpPack_Beneficiaries
+       ,BP_EmpPack_EffectiveDate
+       ,BP_EmpPack_Title
+       ,BP_EmpPack_First_Name
+       ,BP_EmpPack_Last_Name
+       ,BP_EmpPack_Position
+       ,BP_EmpPack_Position_Other
+       ,BP_EmpPack_Sex
+       ,BP_EmpPack_Date_Of_Birth
+       ,BP_EmpPack_Email_Address
+       ,BP_EmpPack_Premises
+       ,BP_EmpPack_Home_Address_Line_1
+       ,BP_EmpPack_Home_Address_Line_2
+       ,BP_EmpPack_Home_Address_Line_3
+       ,BP_EmpPack_Province
+       ,BP_EmpPack_Area_Code
+       ,BP_EmpPack_SME_Level
+       ,BP_EmpPack_Optional_Level_Buy_Up
+       ,BP_EmpPack_SME_Cover_Status
+       ,BP_EmpPack_Optional_Cover_Status_Buy_Up
+       ,BP_EmpPack_Beneficiaries
+       ,BP_EmpPack_Employee_Total_Premium
+       ,BP_EmpPack_Employee_Equipsme_Margin
+       ,BP_EmpPack_Employee_AXA_Margin
+       ,BP_EmpPack_Employee_Equipsme_Comm
+       ,BP_EmpPack_Employee_AXA_Margin_IPT
+       ,BP_EmpPack_Employee_Thriva
+       ,BP_Emppack_Employee_Medical_Solutions
+       ,iImportRecNo
+       ,dtProcessDate
+FROM   
+       [SKi_Equipsme_UAT].[ski_int].[ESME_Staging_Risk] S
+WHERE
+       ROUND(CAST(S.BP_EmpPack_Employee_Total_Premium AS decimal(18,2)), 2) <> 0.0;
+
+
 
 --======================================================================================================================
 --               ***********                   FLAG Records as imported                      ************
